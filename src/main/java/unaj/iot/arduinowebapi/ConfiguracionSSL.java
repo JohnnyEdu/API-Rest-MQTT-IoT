@@ -18,8 +18,33 @@ public class ConfiguracionSSL {
 	private String keyStorePass;
 	@Value("${server.ssl.key-alias}")
 	private String aliasKeyStore;
+	@Value("${server.ssl.key-store-filename}")
+	private String keyStoreFileName;
 	
 	public ConfiguracionSSL() {
 		System.out.println("constructor");
 	}
+
+	public String getTipoEncrpKeyStore() {
+		return tipoEncrpKeyStore;
+	}
+
+	public String getKeyStore() {
+		return keyStore;
+	}
+
+	public String getKeyStorePass() {
+		return keyStorePass;
+	}
+
+	public String getAliasKeyStore() {
+		return aliasKeyStore;
+	}
+
+	public String getKeyStoreFileName() {
+		return keyStoreFileName;
+	}
+	
+	
+	
 }

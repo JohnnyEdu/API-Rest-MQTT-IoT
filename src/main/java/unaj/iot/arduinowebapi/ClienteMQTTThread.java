@@ -2,8 +2,20 @@ package unaj.iot.arduinowebapi;
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
+import java.util.Properties;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -13,6 +25,7 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 
@@ -52,6 +65,31 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 		 writter.append(String.valueOf(medida));
 		 writter.close();
 	 }
+	
+	
+	private void configurarConexionSSL(MqttConnectOptions opciones) 
+			throws KeyStoreException, 
+			NoSuchAlgorithmException, 
+			CertificateException, 
+			FileNotFoundException, 
+			IOException,
+			UnrecoverableKeyException,
+			KeyManagementException{
+		char[] passwd = configuracionSSL.getKeyStorePass().toCharArray();
+		
+		KeyStore ks = KeyStore.getInstance("PKCS12");
+		ClassLoader classLoader = getClass().getClassLoader();
+		String archivo = new File(classLoader.getResource(configuracionSSL.getKeyStoreFileName()).getFile()).getPath(); 
+	    ks.load(new FileInputStream(archivo), passwd);
+		
+	    KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
+	    kmf.init(ks, passwd);
+	    
+	    SSLContext ctx = SSLContext.getInstance("SSLv3");
+	    ctx.init(kmf.getKeyManagers(), null, null);
+	    opciones.setSocketFactory(ctx.getSocketFactory());
+	}
+	
 	/**
 	 * Consulta a Web Socket de HiveMQ: http://www.hivemq.com/demos/websocket-client/
 	 * */
@@ -60,14 +98,44 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 		try {
 			if(cliente == null) {
 				//se puede conectar con tcp://xxx:1883 ver en http://www.mqtt-dashboard.com/index.html
-				cliente = new MqttClient(BROKER_URL, MqttClient.generateClientId());
+				cliente = new MqttClient(BROKER_URL + ":" + BROKER_PUERTO_SSL, MqttClient.generateClientId());
 								
 				MqttConnectOptions options = new MqttConnectOptions();
+				Properties propiedades = new Properties();
+				propiedades.setProperty("keyStore", configuracionSSL.getKeyStore());
+				propiedades.setProperty("keyStorePassword", configuracionSSL.getKeyStorePass());
+				//propiedades.setProperty("keyStoreType", configuracionSSL.getTipoEncrpKeyStore());
+				
+				try {
+					configurarConexionSSL(options);
+				} catch (UnrecoverableKeyException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (KeyManagementException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (KeyStoreException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (NoSuchAlgorithmException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (CertificateException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (FileNotFoundException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 				options.setCleanSession(true);//no guarda estado de sesión
 				
 				//tiempo que tarda el cliente en enviar ping para mantener la conexión
 				options.setKeepAliveInterval(200);
-				
+				options.setConnectionTimeout(60);
 				//Topico | Mensaje | QoS | Retained?
 				/*
 				 * QoS: 3 niveles,  0 --> como mucho una vez
@@ -77,7 +145,7 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 				 * 
 				 * https://www.eclipse.org/paho/files/mqttdoc/MQTTClient/html/qos.html
 				 * */
-				/*options.setWill(TOPICO_BROKER, "Se desconectó la API Web para Arduino UNO R3 UNAJ".getBytes(), 0, true);
+				options.setWill(TOPICO_BROKER, "Se desconectó la API Web para Arduino UNO R3 UNAJ".getBytes(), 0, true);
 				cliente.setCallback(this);
 				cliente.connect(options);
 				
@@ -88,7 +156,7 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 					    2, // QoS 
 					    true); // retained ? especifica si el broker guarda el mensaje para mostrarselo a cualquier suscriptor que se conecte 
 				
-				cliente.subscribe(TOPICO_BROKER);*/
+				cliente.subscribe(TOPICO_BROKER);
 				
 					//TODO: dejar conexion activa?
 				
