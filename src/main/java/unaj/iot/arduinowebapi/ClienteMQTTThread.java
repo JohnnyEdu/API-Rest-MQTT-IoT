@@ -5,8 +5,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import javax.net.ssl.SSLSocketFactory;
-
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -14,27 +12,28 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
+
+@Component
+@Scope("prototype")
+//TODO: buscar prototype
 public class ClienteMQTTThread implements  Runnable,MqttCallback{
-	public static ClienteMQTTThread instancia;
 	private static MqttClient cliente;
-	private final String BROKER_URL = "tcp://broker.hivemq.com";
-	private final String BROKER_PUERTO_SSL = "8883";
+	private final String BROKER_URL = "ssl://broker.hivemq.com";
+	private final Integer BROKER_PUERTO_SSL = 8883;
 	public static String SERVER_HOME;
 	public static String ARCHIVO_HIST_TEMPERATURA;
 	public static String ARCHIVO_HIST_HUMEDAD;
 	public static final String TOPICO_BROKER = "meteorologiaUnajIoT";
 	
-	public static synchronized ClienteMQTTThread getInstancia() {
-		if(instancia == null) {
-			synchronized (ClienteMQTTThread.class) {
-				instancia = new ClienteMQTTThread();
-			}
-		}
-		return instancia;
-	}
+	@Autowired
+	ConfiguracionSSL configuracionSSL;
 	
-	 private ClienteMQTTThread() {
+	
+	
+	 public ClienteMQTTThread() {
 		 try {
 			SERVER_HOME = new File(".").getCanonicalPath() + File.separator;
 			ARCHIVO_HIST_TEMPERATURA = SERVER_HOME + "historicoTelemetriaTemperatura.txt";
@@ -44,10 +43,6 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 			e.printStackTrace();
 		}
 	}
-	 
-	 
-	 
-
 	@Override
 	 public void messageArrived(String topico, MqttMessage medida) throws Exception {
 		 //TODO: revisar comportamiento para humedad
@@ -68,11 +63,6 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 				cliente = new MqttClient(BROKER_URL, MqttClient.generateClientId());
 								
 				MqttConnectOptions options = new MqttConnectOptions();
-				
-				
-				options.setSocketFactory(SSLSocketFactory.getDefault());
-				
-				
 				options.setCleanSession(true);//no guarda estado de sesión
 				
 				//tiempo que tarda el cliente en enviar ping para mantener la conexión
@@ -87,7 +77,7 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 				 * 
 				 * https://www.eclipse.org/paho/files/mqttdoc/MQTTClient/html/qos.html
 				 * */
-				options.setWill(TOPICO_BROKER, "Se desconectó la API Web para Arduino UNO R3 UNAJ".getBytes(), 0, true);
+				/*options.setWill(TOPICO_BROKER, "Se desconectó la API Web para Arduino UNO R3 UNAJ".getBytes(), 0, true);
 				cliente.setCallback(this);
 				cliente.connect(options);
 				
@@ -98,24 +88,24 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 					    2, // QoS 
 					    true); // retained ? especifica si el broker guarda el mensaje para mostrarselo a cualquier suscriptor que se conecte 
 				
-				cliente.subscribe(TOPICO_BROKER);
+				cliente.subscribe(TOPICO_BROKER);*/
 				
 					//TODO: dejar conexion activa?
 				
 				
-				SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-				try {
-					socketFactory.createSocket("BROKER_URL", Integer.valueOf(BROKER_PUERTO_SSL));
-				} catch (NumberFormatException | IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+//				SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
+//				try {
+//					socketFactory.createSocket("BROKER_URL", Integer.valueOf(BROKER_PUERTO_SSL));
+//				} catch (NumberFormatException | IOException e) {
+//					// TODO Auto-generated catch block
+//					e.printStackTrace();
+//				}
 				
 			}
 		} catch (MqttException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		} 
+		}
 	}
 
 	@Override
@@ -129,5 +119,4 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 		// TODO Auto-generated method stub
 		
 	}
-
 }
