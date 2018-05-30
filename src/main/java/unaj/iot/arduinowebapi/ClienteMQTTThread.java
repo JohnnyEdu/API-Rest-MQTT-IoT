@@ -10,12 +10,14 @@ import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 import java.util.Properties;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManagerFactory;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -23,9 +25,9 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
 
@@ -34,7 +36,8 @@ import org.springframework.stereotype.Component;
 //TODO: buscar prototype
 public class ClienteMQTTThread implements  Runnable,MqttCallback{
 	private static MqttClient cliente;
-	private final String BROKER_URL = "ssl://broker.hivemq.com";
+//	private final String BROKER_URL = "ssl://broker.hivemq.com";
+	private final String BROKER_URL = "ssl://192.168.0.35";
 	private final Integer BROKER_PUERTO_SSL = 8883;
 	public static String SERVER_HOME;
 	public static String ARCHIVO_HIST_TEMPERATURA;
@@ -76,7 +79,6 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 			UnrecoverableKeyException,
 			KeyManagementException{
 		char[] passwd = configuracionSSL.getKeyStorePass().toCharArray();
-		
 		KeyStore ks = KeyStore.getInstance("PKCS12");
 		ClassLoader classLoader = getClass().getClassLoader();
 		String archivo = new File(classLoader.getResource(configuracionSSL.getKeyStoreFileName()).getFile()).getPath(); 
@@ -85,8 +87,10 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 	    KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
 	    kmf.init(ks, passwd);
 	    
-	    SSLContext ctx = SSLContext.getInstance("SSLv3");
-	    ctx.init(kmf.getKeyManagers(), null, null);
+	    SSLContext ctx = SSLContext.getInstance("SSL");
+	    TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+	    trustManagerFactory.init(ks);
+	    ctx.init(kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), new SecureRandom());
 	    opciones.setSocketFactory(ctx.getSocketFactory());
 	}
 	
@@ -98,13 +102,10 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 		try {
 			if(cliente == null) {
 				//se puede conectar con tcp://xxx:1883 ver en http://www.mqtt-dashboard.com/index.html
-				cliente = new MqttClient(BROKER_URL + ":" + BROKER_PUERTO_SSL, MqttClient.generateClientId());
+				cliente = new MqttClient(BROKER_URL + ":" + BROKER_PUERTO_SSL, MqttClient.generateClientId()
+						,new MemoryPersistence());
 								
 				MqttConnectOptions options = new MqttConnectOptions();
-				Properties propiedades = new Properties();
-				propiedades.setProperty("keyStore", configuracionSSL.getKeyStore());
-				propiedades.setProperty("keyStorePassword", configuracionSSL.getKeyStorePass());
-				//propiedades.setProperty("keyStoreType", configuracionSSL.getTipoEncrpKeyStore());
 				
 				try {
 					configurarConexionSSL(options);
