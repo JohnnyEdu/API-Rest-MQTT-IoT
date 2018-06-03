@@ -9,11 +9,8 @@ import org.springframework.context.annotation.PropertySource;
 @SpringBootApplication
 @PropertySource(value = "classpath:application.properties")
 public class Application extends SpringBootServletInitializer {
-
+	
 	public Application() {
-		//TODO: ver porque entra 2 veces
-		Thread hiloConexion = new Thread(ClienteMQTTThread.getInstancia());
-		hiloConexion.start();
 	}
 
 	@Override
