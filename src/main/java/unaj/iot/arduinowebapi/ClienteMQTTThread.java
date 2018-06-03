@@ -1,19 +1,21 @@
 package unaj.iot.arduinowebapi;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.security.UnrecoverableKeyException;
+import java.security.cert.Certificate;
 import java.security.cert.CertificateException;
-import java.util.Properties;
+import java.security.cert.CertificateFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -79,18 +81,39 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 			UnrecoverableKeyException,
 			KeyManagementException{
 		char[] passwd = configuracionSSL.getKeyStorePass().toCharArray();
+		
+		 CertificateFactory cf = CertificateFactory.getInstance("X.509");
+		
+		// client key and certificates are sent to server so it can authenticate us
 		KeyStore ks = KeyStore.getInstance("PKCS12");
-		ClassLoader classLoader = getClass().getClassLoader();
-		String archivo = new File(classLoader.getResource(configuracionSSL.getKeyStoreFileName()).getFile()).getPath(); 
-	    ks.load(new FileInputStream(archivo), passwd);
+		InputStream fis2 = new FileInputStream("C:\\Program Files\\Java\\jdk1.8.0_171\\bin\\tomcatcert.cer");
+		BufferedInputStream bis2 = new BufferedInputStream(fis2);
+		Certificate clientCert = cf.generateCertificate(bis2);
+		//String archivo = new File(classLoader.getResource(configuracionSSL.getKeyStoreFileName()).getFile()).getPath(); 
+		//ks.load(new FileInputStream(archivo), passwd);
+
+		ks.load(null,null);
+		ks.setCertificateEntry("ca-certificate", clientCert);
+		//ClassLoader classLoader = getClass().getClassLoader();
 		
 	    KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
 	    kmf.init(ks, passwd);
 	    
-	    SSLContext ctx = SSLContext.getInstance("SSL");
-	    TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-	    trustManagerFactory.init(ks);
-	    ctx.init(kmf.getKeyManagers(), trustManagerFactory.getTrustManagers(), new SecureRandom());
+		// CA certificate is used to authenticate server
+		InputStream fis = new FileInputStream("C:\\Program Files\\Java\\jdk1.8.0_171\\bin\\hivemq.cer");
+		BufferedInputStream bis = new BufferedInputStream(fis);
+		Certificate cacert = cf.generateCertificate(bis);
+		
+		KeyStore caKs = KeyStore.getInstance(KeyStore.getDefaultType());
+		caKs.load(null, null);
+		caKs.setCertificateEntry("ca-certificate", cacert);
+		TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
+		tmf.init(caKs);
+
+	    
+	    
+	    SSLContext ctx = SSLContext.getInstance("TLSv1.2");
+	    ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(),null);
 	    opciones.setSocketFactory(ctx.getSocketFactory());
 	}
 	
@@ -157,7 +180,7 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 					    2, // QoS 
 					    true); // retained ? especifica si el broker guarda el mensaje para mostrarselo a cualquier suscriptor que se conecte 
 				
-				cliente.subscribe(TOPICO_BROKER);
+				
 				
 					//TODO: dejar conexion activa?
 				
