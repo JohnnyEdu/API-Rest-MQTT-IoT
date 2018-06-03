@@ -1,25 +1,9 @@
 package unaj.iot.arduinowebapi;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.security.KeyManagementException;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
-import java.security.cert.CertificateFactory;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManagerFactory;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -47,9 +31,7 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 	public static final String TOPICO_BROKER = "meteorologiaUnajIoT";
 	
 	@Autowired
-	ConfiguracionSSL configuracionSSL;
-	
-	
+	ConfTLSFactory confTLSFactory;
 	
 	 public ClienteMQTTThread() {
 		 try {
@@ -72,51 +54,6 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 	 }
 	
 	
-	private void configurarConexionSSL(MqttConnectOptions opciones) 
-			throws KeyStoreException, 
-			NoSuchAlgorithmException, 
-			CertificateException, 
-			FileNotFoundException, 
-			IOException,
-			UnrecoverableKeyException,
-			KeyManagementException{
-		char[] passwd = configuracionSSL.getKeyStorePass().toCharArray();
-		
-		 CertificateFactory cf = CertificateFactory.getInstance("X.509");
-		
-		// client key and certificates are sent to server so it can authenticate us
-		KeyStore ks = KeyStore.getInstance("PKCS12");
-		InputStream fis2 = new FileInputStream("C:\\Program Files\\Java\\jdk1.8.0_171\\bin\\tomcatcert.cer");
-		BufferedInputStream bis2 = new BufferedInputStream(fis2);
-		Certificate clientCert = cf.generateCertificate(bis2);
-		//String archivo = new File(classLoader.getResource(configuracionSSL.getKeyStoreFileName()).getFile()).getPath(); 
-		//ks.load(new FileInputStream(archivo), passwd);
-
-		ks.load(null,null);
-		ks.setCertificateEntry("ca-certificate", clientCert);
-		//ClassLoader classLoader = getClass().getClassLoader();
-		
-	    KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-	    kmf.init(ks, passwd);
-	    
-		// CA certificate is used to authenticate server
-		InputStream fis = new FileInputStream("C:\\Program Files\\Java\\jdk1.8.0_171\\bin\\hivemq.cer");
-		BufferedInputStream bis = new BufferedInputStream(fis);
-		Certificate cacert = cf.generateCertificate(bis);
-		
-		KeyStore caKs = KeyStore.getInstance(KeyStore.getDefaultType());
-		caKs.load(null, null);
-		caKs.setCertificateEntry("ca-certificate", cacert);
-		TrustManagerFactory tmf = TrustManagerFactory.getInstance(TrustManagerFactory.getDefaultAlgorithm());
-		tmf.init(caKs);
-
-	    
-	    
-	    SSLContext ctx = SSLContext.getInstance("TLSv1.2");
-	    ctx.init(kmf.getKeyManagers(), tmf.getTrustManagers(),null);
-	    opciones.setSocketFactory(ctx.getSocketFactory());
-	}
-	
 	/**
 	 * Consulta a Web Socket de HiveMQ: http://www.hivemq.com/demos/websocket-client/
 	 * */
@@ -131,29 +68,11 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 				MqttConnectOptions options = new MqttConnectOptions();
 				
 				try {
-					configurarConexionSSL(options);
-				} catch (UnrecoverableKeyException e) {
+					confTLSFactory.configurarConexionTLS(options);
+				} catch (Exception e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
-				} catch (KeyManagementException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (KeyStoreException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (NoSuchAlgorithmException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (CertificateException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (FileNotFoundException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+				} 
 				
 				options.setCleanSession(true);//no guarda estado de sesión
 				
@@ -179,19 +98,6 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 					    "Se conectó la API Web para Arduino UNO R3 UNAJ".getBytes(), // payload 
 					    2, // QoS 
 					    true); // retained ? especifica si el broker guarda el mensaje para mostrarselo a cualquier suscriptor que se conecte 
-				
-				
-				
-					//TODO: dejar conexion activa?
-				
-				
-//				SSLSocketFactory socketFactory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-//				try {
-//					socketFactory.createSocket("BROKER_URL", Integer.valueOf(BROKER_PUERTO_SSL));
-//				} catch (NumberFormatException | IOException e) {
-//					// TODO Auto-generated catch block
-//					e.printStackTrace();
-//				}
 				
 			}
 		} catch (MqttException e) {

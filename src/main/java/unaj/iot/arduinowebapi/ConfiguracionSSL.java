@@ -21,6 +21,20 @@ public class ConfiguracionSSL {
 	@Value("${server.ssl.key-store-filename}")
 	private String keyStoreFileName;
 	
+	@Value("${clienteCert}")
+	private String pathClienteCert;
+	
+	@Value("${servCert}")
+	private String pathServCert;
+	
+	public String getPathClienteCert() {
+		return pathClienteCert;
+	}
+
+	public String getPathServCert() {
+		return pathServCert;
+	}
+
 	public ConfiguracionSSL() {
 		System.out.println("constructor");
 	}
