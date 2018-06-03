@@ -8,7 +8,7 @@ import java.io.IOException;
 public class ArchivoTelemetriaService {
 	
 	public static String getUltimaMedicionTemperatura() {
-		String lineaFinal = "";
+		String lineaFinal = "Sin archivo";
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(ClienteMQTTThread.ARCHIVO_HIST_TEMPERATURA));
             lineaFinal = reader.readLine();

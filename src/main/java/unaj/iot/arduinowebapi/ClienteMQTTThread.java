@@ -34,14 +34,9 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 	ConfTLSFactory confTLSFactory;
 	
 	 public ClienteMQTTThread() {
-		 try {
-			SERVER_HOME = new File(".").getCanonicalPath() + File.separator;
-			ARCHIVO_HIST_TEMPERATURA = SERVER_HOME + "historicoTelemetriaTemperatura.txt";
-			ARCHIVO_HIST_HUMEDAD = SERVER_HOME + "historicoTelemetriaHumedad.txt";
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		SERVER_HOME = System.getProperty("catalina.base") + File.separator + "archivosTelemetria" +File.separator;
+		ARCHIVO_HIST_TEMPERATURA = SERVER_HOME + "historicoTelemetriaTemperatura.txt";
+		ARCHIVO_HIST_HUMEDAD = SERVER_HOME + "historicoTelemetriaHumedad.txt";
 	}
 	@Override
 	 public void messageArrived(String topico, MqttMessage medida) throws Exception {
@@ -91,6 +86,8 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 				options.setWill(TOPICO_BROKER, "Se desconectó la API Web para Arduino UNO R3 UNAJ".getBytes(), 0, true);
 				cliente.setCallback(this);
 				cliente.connect(options);
+				cliente.subscribe(TOPICO_BROKER);
+				
 				
 				//para ver el test: http://www.hivemq.com/demos/websocket-client/
 				cliente.publish( 
