@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class ThreadAsincronoService {
+	public ClienteMQTTThread cliente;
+	
 	@Autowired
     private ApplicationContext applicationContext;
  
@@ -18,7 +20,7 @@ public class ThreadAsincronoService {
         taskExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                ClienteMQTTThread cliente = applicationContext.getBean(ClienteMQTTThread.class);
+                cliente = applicationContext.getBean(ClienteMQTTThread.class);
                 taskExecutor.execute(cliente);
             }
         });

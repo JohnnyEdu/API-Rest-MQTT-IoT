@@ -38,6 +38,15 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 		ARCHIVO_HIST_TEMPERATURA = SERVER_HOME + "historicoTelemetriaTemperatura.txt";
 		ARCHIVO_HIST_HUMEDAD = SERVER_HOME + "historicoTelemetriaHumedad.txt";
 	}
+	 
+	 public void publicar (String mensaje) throws MqttException{
+		 	cliente.publish( 
+					TOPICO_BROKER, // topic 
+					mensaje.getBytes(), // payload 
+				    2, // QoS 
+				    false);
+	 }
+	 
 	@Override
 	 public void messageArrived(String topico, MqttMessage medida) throws Exception {
 		 //TODO: revisar comportamiento para humedad
