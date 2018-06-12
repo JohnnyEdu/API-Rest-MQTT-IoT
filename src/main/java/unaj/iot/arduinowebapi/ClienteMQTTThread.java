@@ -3,7 +3,7 @@ package unaj.iot.arduinowebapi;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
-import java.io.IOException;
+import java.util.Date;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
@@ -16,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import com.google.gson.Gson;
+
 
 @Component
 @Scope("prototype")
@@ -23,7 +25,7 @@ import org.springframework.stereotype.Component;
 public class ClienteMQTTThread implements  Runnable,MqttCallback{
 	private static MqttClient cliente;
 //	private final String BROKER_URL = "ssl://broker.hivemq.com";
-	private final String BROKER_URL = "ssl://192.168.0.35";
+	private final String BROKER_URL = "ssl://192.168.0.38";
 	private final Integer BROKER_PUERTO_SSL = 8883;
 	public static String SERVER_HOME;
 	public static String ARCHIVO_HIST_TEMPERATURA;
@@ -53,7 +55,9 @@ public class ClienteMQTTThread implements  Runnable,MqttCallback{
 		 System.err.println(topico + ", msg = "+ medida);
 		 BufferedWriter writter = new BufferedWriter(new FileWriter(ARCHIVO_HIST_TEMPERATURA,true));
 		 writter.newLine();
-		 writter.append(String.valueOf(medida));
+		 MensajeTelemetria msj = new MensajeTelemetria(medida.toString(), "temperatura");
+		 String json = new Gson().toJson(msj);
+		 writter.append(json);
 		 writter.close();
 	 }
 	

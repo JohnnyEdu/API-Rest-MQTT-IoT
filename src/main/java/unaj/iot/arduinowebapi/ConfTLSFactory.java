@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
@@ -37,8 +38,12 @@ public class ConfTLSFactory {
 			KeyManagementException{
 		char[] passwd = configuracionTLS.getKeyStorePass().toCharArray();
 		
-		String pathClienteCert = configuracionTLS.getPathClienteCert();
-		String pathServCert = configuracionTLS.getPathServCert();
+		ClassLoader classLoader = getClass().getClassLoader();
+		URL urlCliente = classLoader.getResource(configuracionTLS.getPathClienteCert());
+		URL urlServer = classLoader.getResource(configuracionTLS.getPathServCert());
+
+		String pathClienteCert = urlCliente.getFile();
+		String pathServCert = urlServer.getFile();
 		
 		CertificateFactory cf = CertificateFactory.getInstance("X.509");
 		

@@ -35,12 +35,7 @@ public class MensajeTelemetriaController {
     public String ultimaMedicionTemperatura() {
     	String msjArduino = ArchivoTelemetriaService.getUltimaMedicionTemperatura();
     	String json = "{error: 'Sin resultados'}";
-    	if(msjArduino!=null) {
-    		MensajeTelemetria medicion = new MensajeTelemetria(msjArduino, "temperatura");
-    		Gson jsonParser = new Gson();
-    		json = jsonParser.toJson(medicion);
-    	}
-        return json;
+        return msjArduino!=null?msjArduino: json;
     }
     
     
