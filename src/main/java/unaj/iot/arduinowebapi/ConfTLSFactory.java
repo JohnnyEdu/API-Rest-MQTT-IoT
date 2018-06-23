@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ConfTLSFactory {
+	protected final String PASSWD_SERV =  "2018unaj";
 	@Autowired
 	ConfiguracionSSL configuracionTLS;
 	
@@ -36,7 +37,6 @@ public class ConfTLSFactory {
 			IOException,
 			UnrecoverableKeyException,
 			KeyManagementException{
-		char[] passwd = configuracionTLS.getKeyStorePass().toCharArray();
 		
 		ClassLoader classLoader = getClass().getClassLoader();
 		URL urlCliente = classLoader.getResource(configuracionTLS.getPathClienteCert());
@@ -58,7 +58,7 @@ public class ConfTLSFactory {
 		ks.setCertificateEntry("ca-certificate", clientCert);
 		
 	    KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-	    kmf.init(ks, passwd);
+	    kmf.init(ks, PASSWD_SERV.toCharArray());
 	    
 		// CA certificate is used to authenticate server
 		fis = new FileInputStream(pathServCert);

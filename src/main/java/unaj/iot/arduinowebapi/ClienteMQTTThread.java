@@ -25,12 +25,12 @@ import com.google.gson.Gson;
 public class ClienteMQTTThread implements  Runnable,MqttCallback{
 	private static MqttClient cliente;
 //	private final String BROKER_URL = "ssl://broker.hivemq.com";
-	private final String BROKER_URL = "ssl://192.168.0.38";
+	private final String BROKER_URL = "ssl://192.168.0.33";
 	private final Integer BROKER_PUERTO_SSL = 8883;
 	public static String SERVER_HOME;
 	public static String ARCHIVO_HIST_TEMPERATURA;
 	public static String ARCHIVO_HIST_HUMEDAD;
-	public static final String TOPICO_BROKER = "meteorologiaUnajIoT";
+	public static final String TOPICO_BROKER = "meteorologia/Unaj/IoT/temperatura";
 	
 	@Autowired
 	ConfTLSFactory confTLSFactory;
